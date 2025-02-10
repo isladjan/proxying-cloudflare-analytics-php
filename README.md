@@ -30,6 +30,35 @@ Alternatively, you can implement a similar solution via a Cloudflare Worker, tho
 2. **Configuration**: Adjust your HTML to load the proxy script instead of the direct Cloudflare script.
 3. **Customization**: Add logic to let users block the script if they wish—because respecting user choice is key.
 
+```javascript
+function cloudflareScript() {
+  // correct the path to the files where they are located
+  const urlLoader = `${baseUrl}/cf_loader.php`;
+  const urlData = `${baseUrl}/cf_data.php`;
+
+  // Cloudflare authentication token - replace with actual token
+  const cfToken = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+  // create global config object before loading the script
+  window.__cfBeacon = {
+    token: cfToken,
+    spa: false,
+    send: {
+      to: urlData, // Override the default CF endpoint with our proxy (cf_smuggler.php)
+    },
+  };
+
+  // script is being created to redirect to cf_loader.php and download CF beacon.js.
+  const cfScript = document.createElement("script");
+  cfScript.defer = true;
+  cfScript.src = urlLoader;
+  // Set the data attribute with the same config to ensure it's picked up
+  cfScript.setAttribute("data-cf-beacon", JSON.stringify(window.__cfBeacon));
+  document.head.appendChild(cfScript);
+}
+requestIdleCallback(() => cloudflareScript());
+```
+
 ## Note
 
 Please be aware that Cloudflare's official documentation does not explicitly state whether proxying their analytics is allowed or forbidden. This has been interpreted as permission to proxy the data, but that policy may change in the future. It’s a good idea to periodically review the latest Cloudflare documentation to ensure ongoing compliance. Additionally, if users prefer not to have their analytics data tracked, be sure to implement logic that respects their choice and disables the collection of their data.
